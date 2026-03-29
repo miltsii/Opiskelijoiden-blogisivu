@@ -1,3 +1,6 @@
+
+
+    
 from flask import Flask, request, redirect, render_template_string, session
 from werkzeug.utils import secure_filename
 import sqlite3
@@ -6,11 +9,11 @@ import os
 app = Flask(__name__)
 app.secret_key = "salainen"
 
-# Kansion määrittely kuville
+
 UPLOAD_FOLDER = "static/uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# --- HTML-mallit ---
+
 INDEX_HTML = """
 <!DOCTYPE html>
 <html>
@@ -163,14 +166,31 @@ POSTS_HTML = """
     <style>
         .post { border: 1px solid #aaa; padding: 10px; margin-bottom: 10px; }
         img { max-width: 300px; max-height: 300px; display:block; margin-top:5px; }
+
+        .trash-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        .trash-btn img {
+            width: 16px;
+            height: 16px;
+        }
     </style>
 </head>
 <body>
 <h1>Postaukset</h1>
-{% for title, content, image_path, username in posts %}
+{% for post_id, title, content, image_path, username in posts %}
 <div class="post">
     <strong>{{ username }}</strong> - <em>{{ title }}</em><br>
     {{ content }}<br>
+
+    <form action="/post_delete/{{ post_id }}" method="post" style="display:inline;">
+        <button class="trash-btn" type="submit">
+            <img src="/static/trashbin.png" alt="Poista">
+        </button>
+    </form>
+
     {% if image_path %}
         <img src="{{ image_path }}" alt="Kuva">
     {% endif %}
@@ -182,7 +202,7 @@ POSTS_HTML = """
 </html>
 """
 
-# --- ROUTEt ---
+
 @app.route("/")
 def index():
     if "username" not in session:
@@ -221,6 +241,7 @@ def send():
 
     db = sqlite3.connect("database.db", check_same_thread=False)
     db.execute("INSERT INTO messages (content, user_id) VALUES (?, ?)", [content, session["user_id"]])
+
     db.commit()
 
     if image and image.filename != "":
@@ -326,7 +347,7 @@ def posts():
         return redirect("/login")
     db = sqlite3.connect("database.db", check_same_thread=False)
     posts = db.execute("""
-        SELECT posts.title, posts.content, posts.image_path, users.username
+        SELECT posts.id, posts.title, posts.content, posts.image_path, users.username
         FROM posts
         JOIN users ON posts.user_id = users.id
         ORDER BY posts.created_at DESC
@@ -334,7 +355,19 @@ def posts():
     db.close()
     return render_template_string(POSTS_HTML, posts=posts)
 
-# --- MAIN ---
+@app.route("/post_delete/<int:post_id>", methods=["POST"])
+def post_delete(post_id):
+    if "username" not in session:
+        return redirect("/login")
+    db = sqlite3.connect("database.db", check_same_thread=False)
+    db.execute("""
+        DELETE FROM posts
+        WHERE id = ? AND user_id = ?
+    """, (post_id, session["user_id"]))
+    db.commit()
+    db.close()
+    return redirect("/posts")
+
 if __name__ == "__main__":
     db = sqlite3.connect("database.db", check_same_thread=False)
     db.execute("CREATE TABLE IF NOT EXISTS visits (id INTEGER PRIMARY KEY, visited_at TEXT)")
@@ -353,14 +386,4 @@ if __name__ == "__main__":
     db.close()
 
     app.run(debug=True)
-
-
-
-
-
-
-
-
-    
-
 
