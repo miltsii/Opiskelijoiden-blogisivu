@@ -19,24 +19,40 @@ INDEX_HTML = """
 <head>
     <title>Keskustelualue</title>
     <style>
-        .message { 
-            display: flex;
-            align-items: center;
-            font-size: 14px;
-        }
+    body {
+        background-image: url('/static/kukat.jpg');
+        background-size: cover;      
+        background-position: center; 
+        background-repeat: no-repeat;
+        margin: 0;
+        padding: 20px 0;            
+        font-family: Arial, sans-serif;
+        min-height: 100vh;          
+    }
+    .container {
+        background-color: rgba(255, 255, 255, 0.9);
+        padding: 20px;
+        border-radius: 10px;
+        max-width: 900px;
+        width: 90%;
+        margin: 0 auto;             
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
 
-        .theme {
-            font-size: 12px;
-            color: gray;
-            margin-left: 5px;
-        }
 
+    .message { display: flex; align-items: center; font-size: 14px; }
+    .theme { font-size: 12px; color: gray; margin-left: 5px; }
+    .trash-btn { background: none; border: none; padding: 0 5px; cursor: pointer; }
+    .trash-btn img { width: 16px; height: 16px; }
+    img { max-width: 200px; max-height: 200px; margin-left: 10px; }
         .trash-btn { background: none; border: none; padding: 0 5px; cursor: pointer; }
         .trash-btn img { width: 16px; height: 16px; }
         img { max-width: 200px; max-height: 200px; margin-left: 10px; }
     </style>
 </head>
 <body>
+<div class="container">
+
 <h1 style="text-align: center;">TERVETULOA OPISKELIJABLOGIIN!</h1>
 
 <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -51,10 +67,9 @@ INDEX_HTML = """
     <input name="search" placeholder="Etsi käyttäjä tai blogi">
     <input type="submit" value="Hae">
 </form>
-<ul>
-<h2>Uusimmat<h2>
-<div style="max-height: 300px; overflow-y: scroll; border:1px solid #aaa; padding:10px;">
 
+<h2>Uusimmat</h2>
+<div style="max-height: 300px; overflow-y: scroll; border:1px solid #aaa; padding:10px;">
 {% for post_id, title, content, image_path, theme, username in posts %}
     <div style="margin-bottom:15px;">
         <strong>{{ username }}</strong> - <em>{{ title }}</em> ({{ theme }})<br>
@@ -65,22 +80,17 @@ INDEX_HTML = """
     </div>
 {% endfor %}
 </div>
-<ul>
 
 <h3>Valitse aihe</h3>
-
 <a href="/">Kaikki</a> |
 <a href="/?theme=opiskelu">Opiskelu</a> |
 <a href="/?theme=vapaa-aika">Vapaa-aika</a> |
 <a href="/?theme=musiikki">Musiikki</a> |
 <a href="/?theme=urheilu">Urheilu</a> |
 <a href="/?theme=lukeminen">Lukeminen</a> |
-<a href="/?theme=pelit">Pelit</a> |
-
-
+<a href="/?theme=pelit">Pelit</a>
 
 <h3>Keskustelualue</h3>
-
 <ul>
 {% for content, msg_id, image_path, username, theme in messages %}
     <li class="message">
@@ -99,6 +109,8 @@ INDEX_HTML = """
 </ul>
 
 <a href="/new">Lähetä uusi viesti</a> | <a href="/posts">Postaukset</a>
+
+</div>
 </body>
 </html>
 """
@@ -142,7 +154,63 @@ LOGIN_HTML = """
 <head>
 <title>Kirjaudu</title>
 </head>
-<body>
+<style>
+body {
+    background-image: url('/static/kukat.jpg');
+    background-size: cover;      
+    background-position: center; 
+    background-repeat: no-repeat;
+    margin: 0;
+    padding: 0;            
+    font-family: Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column; 
+    align-items: center;     
+}
+
+header {
+    width: 100%
+    text-align: center;
+    padding: 40px 0 20px 0;
+    font-size: 32px;
+    color: #fff;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+}
+
+.container {
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 400px;  
+    width: 90%;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    margin-top: auto;
+    margin-bottom: auto;
+    text-align: center; 
+}
+
+input[type="text"], input[type="password"] {
+    width: 80%;
+    padding: 10px;
+    margin: 8px 0;
+    border-radius: 5px
+    border: 1px solid
+}
+
+input[type="submit"] {
+    padding: 10px 20px;
+    margin-top: 10px;
+    border-radius: 5px;
+    border: none;
+    background-color: #4285F4;
+    color: white;
+    cursor: pointer;
+}
+input[type="submit"]:hover {
+    background-color: #357ae8;
+}
+</style>
 
 <h1 style="text-align: center;">Kirjaudu opiskelijablogiin</h1>
 <div style="text-align: center;">
@@ -514,7 +582,7 @@ if __name__ == "__main__":
     """)
     db = sqlite3.connect("database.db", check_same_thread=False)
 
-# Tarkistetaan ensin, onko blog_name-sarake jo olemassa
+
     cursor = db.cursor()
     cursor.execute("PRAGMA table_info(users)")
     columns = [col[1] for col in cursor.fetchall()]
@@ -525,6 +593,13 @@ if __name__ == "__main__":
 
     
     db.close()
+
+if __name__ == "__main__":
+    if not os.path.exists("database.db"):
+        with sqlite3.connect("database.db") as db:
+            with open("schema.sql") as f:
+                db.executescript(f.read())
+
 
     app.run(debug=True)
 
