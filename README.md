@@ -16,8 +16,7 @@ Sivulla pystyt:
 - Avaa komentorivi (Terminal)
 - Windows: cmd tai PowerShell
 - Mac/Linux: Terminal
-- Siirry kansioon, johon haluat tallentaa projektin, esim.:
-- cd C:\Users\Käyttäjä\Documents\Projektit
+- Siirry kansioon, johon haluat tallentaa projektin
 - Lataa repo koneelle
 - Kirjoita: git clone https://github.com/kayttaja/repo.git
 - Tämä luo kansion nimeltä repo siihen hakemistoon, jossa olet.
