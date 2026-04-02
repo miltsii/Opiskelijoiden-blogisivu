@@ -12,15 +12,15 @@ Sivulla pystyt:
 
 #Avaus ohjeet.
 
-Lataa koodi Githubin "Code" linkistä.
-Avaa komentorivi (Terminal)
-Windows: cmd tai PowerShell
-Mac/Linux: Terminal
-Siirry kansioon, johon haluat tallentaa projektin, esim.:
-cd C:\Users\Käyttäjä\Documents\Projektit
-Lataa repo koneelle
-Kirjoita: git clone https://github.com/kayttaja/repo.git
-Tämä luo kansion nimeltä repo siihen hakemistoon, jossa olet.
-Mene kansioon: cd repo
-Avaa projekti VS Code:lla
-Kansion ollessa oikeassa paikassa: code .
+- Lataa koodi Githubin "Code" linkistä.
+- Avaa komentorivi (Terminal)
+- Windows: cmd tai PowerShell
+- Mac/Linux: Terminal
+- Siirry kansioon, johon haluat tallentaa projektin, esim.:
+- cd C:\Users\Käyttäjä\Documents\Projektit
+- Lataa repo koneelle
+- Kirjoita: git clone https://github.com/kayttaja/repo.git
+- Tämä luo kansion nimeltä repo siihen hakemistoon, jossa olet.
+- Mene kansioon: cd repo
+- Avaa projekti VS Code:lla
+- Kansion ollessa oikeassa paikassa: code .
