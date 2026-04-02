@@ -1,8 +1,7 @@
 
-
-    
 from flask import Flask, request, redirect, render_template_string, session
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3
 import os
 
@@ -20,7 +19,18 @@ INDEX_HTML = """
 <head>
     <title>Keskustelualue</title>
     <style>
-        .message { display: flex; align-items: center; }
+        .message { 
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .theme {
+            font-size: 12px;
+            color: gray;
+            margin-left: 5px;
+        }
+
         .trash-btn { background: none; border: none; padding: 0 5px; cursor: pointer; }
         .trash-btn img { width: 16px; height: 16px; }
         img { max-width: 200px; max-height: 200px; margin-left: 10px; }
@@ -37,12 +47,45 @@ INDEX_HTML = """
 </div>
 
 <p>Sivua ladattu: {{ visits }} kertaa</p>
-<h2>Keskustelualue</h2>
+<form method="get" action="/">
+    <input name="search" placeholder="Etsi käyttäjä tai blogi">
+    <input type="submit" value="Hae">
+</form>
+<ul>
+<h2>Uusimmat<h2>
+<div style="max-height: 300px; overflow-y: scroll; border:1px solid #aaa; padding:10px;">
+
+{% for post_id, title, content, image_path, theme, username in posts %}
+    <div style="margin-bottom:15px;">
+        <strong>{{ username }}</strong> - <em>{{ title }}</em> ({{ theme }})<br>
+        {{ content }}<br>
+        {% if image_path %}
+            <img src="{{ image_path }}" style="max-width:200px;">
+        {% endif %}
+    </div>
+{% endfor %}
+</div>
+<ul>
+
+<h3>Valitse aihe</h3>
+
+<a href="/">Kaikki</a> |
+<a href="/?theme=opiskelu">Opiskelu</a> |
+<a href="/?theme=vapaa-aika">Vapaa-aika</a> |
+<a href="/?theme=musiikki">Musiikki</a> |
+<a href="/?theme=urheilu">Urheilu</a> |
+<a href="/?theme=lukeminen">Lukeminen</a> |
+<a href="/?theme=pelit">Pelit</a> |
+
+
+
+<h3>Keskustelualue</h3>
 
 <ul>
-{% for content, msg_id, image_path, username in messages %}
+{% for content, msg_id, image_path, username, theme in messages %}
     <li class="message">
         <strong>{{ username }}:</strong> {{ content }}
+        <span class="theme">({{ theme }})</span>
         {% if image_path %}
             <img src="{{ image_path }}" alt="Ladattu kuva">
         {% endif %}
@@ -72,8 +115,20 @@ NEW_HTML = """
 <form action="/send" method="post" enctype="multipart/form-data">
 <textarea name="content" rows="4" cols="40" placeholder="Kirjoita viesti..."></textarea><br><br>
 Lisää kuva (valinnainen): <input type="file" name="image"><br><br>
+Teema:<br>
+<select name="theme">
+    <option value="opiskelu">Opiskelu</option>
+    <option value="vapaa-aika">Vapaa-aika</option>
+    <option value="musiikki">Musiikki</option>
+    <option value="elokuvat/sarjat">Elokuvat/Sarjat</option>
+    <option value="urheilu">Urheilu</option>
+    <option value="lukeminen">Lukeminen</option>
+    <option value="pelit">Pelit</option>
+</select><br><br>
 <input type="submit" value="Lähetä">
 </form>
+
+
 
 <br>
 <a href="/">Takaisin keskusteluun</a>
@@ -89,8 +144,8 @@ LOGIN_HTML = """
 </head>
 <body>
 
-<h1>Kirjaudu opiskelijablogiin</h1>
-
+<h1 style="text-align: center;">Kirjaudu opiskelijablogiin</h1>
+<div style="text-align: center;">
 <form action="/login" method="post">
 Käyttäjänimi:<br>
 <input name="username"><br><br>
@@ -100,6 +155,7 @@ Salasana:<br>
 
 <input type="submit" value="Kirjaudu">
 </form>
+</div>
 
 <br>
 <a href="/register">Rekisteröidy</a>
@@ -121,6 +177,10 @@ REGISTER_HTML = """
 <form action="/create_user" method="post">
 Käyttäjänimi:<br>
 <input name="username"><br><br>
+
+Blogin nimi:<br>
+<input name="blog_name"><br><br>
+
 
 Salasana:<br>
 <input type="password" name="password"><br><br>
@@ -148,6 +208,16 @@ POST_HTML = """
 Otsikko:<br><input name="title"><br><br>
 Teksti:<br>
 <textarea name="content" rows="4" cols="40"></textarea><br><br>
+Teema:<br>
+<select name="theme">
+    <option value="opiskelu">Opiskelu</option>
+    <option value="vapaa-aika">Vapaa-aika</option>
+    <option value="musiikki">Musiikki</option>
+    <option value="elokuvat/sarjat">Elokuvat/Sarjat</option>
+    <option value="urheilu">Urheilu</option>
+    <option value="lukeminen">Lukeminen</option>
+    <option value="pelit">Pelit</option>
+</select><br><br>
 Kuva (valinnainen): <input type="file" name="image"><br><br>
 <input type="submit" value="Julkaise">
 </form>
@@ -180,9 +250,9 @@ POSTS_HTML = """
 </head>
 <body>
 <h1>Postaukset</h1>
-{% for post_id, title, content, image_path, username in posts %}
+{% for post_id, title, content, image_path, theme, username in posts %}
 <div class="post">
-    <strong>{{ username }}</strong> - <em>{{ title }}</em><br>
+    <strong>{{ username }}</strong> - <em>{{ title }}</em> - <span>({{ theme }})</span><br>
     {{ content }}<br>
 
     <form action="/post_delete/{{ post_id }}" method="post" style="display:inline;">
@@ -208,19 +278,58 @@ def index():
     if "username" not in session:
         return redirect("/login")
     db = sqlite3.connect("database.db", check_same_thread=False)
+    search = request.args.get("search")
     db.execute("INSERT INTO visits (visited_at) VALUES (datetime('now'))")
     db.commit()
 
     visits = db.execute("SELECT COUNT(*) FROM visits").fetchone()[0]
-    messages = db.execute("""
-        SELECT messages.content, messages.id, messages.image_path, users.username
-        FROM messages
-        JOIN users ON messages.user_id = users.id
+    if search:
+        posts = db.execute("""
+            SELECT posts.id, posts.title, posts.content, posts.image_path, posts.theme, users.username
+            FROM posts
+            JOIN users ON posts.user_id = users.id
+            WHERE users.username LIKE ? OR users.blog_name LIKE ?
+            ORDER BY posts.created_at DESC
+        """, (f"%{search}%", f"%{search}%")).fetchall()
+    else:
+        posts = db.execute("""
+            SELECT posts.id, posts.title, posts.content, posts.image_path, posts.theme, users.username
+            FROM posts
+            JOIN users ON posts.user_id = users.id
+            ORDER BY posts.created_at DESC
+            LIMIT 10
+        """).fetchall()
+
+    selected_theme = request.args.get("theme")
+
+    if search:
+        messages = db.execute("""
+            SELECT messages.content, messages.id, messages.image_path, users.username, messages.theme
+            FROM messages
+            JOIN users ON messages.user_id = users.id
+            WHERE users.username LIKE ? OR users.blog_name LIKE ?
         ORDER BY messages.id DESC
-    """).fetchall()
+        """, (f"%{search}%", f"%{search}%")).fetchall()
+
+    elif selected_theme:
+        messages = db.execute("""
+            SELECT messages.content, messages.id, messages.image_path, users.username, messages.theme
+            FROM messages
+            JOIN users ON messages.user_id = users.id
+            WHERE messages.theme = ?
+            ORDER BY messages.id DESC
+        """, (selected_theme,)).fetchall()
+
+    else:
+        messages = db.execute("""
+            SELECT messages.content, messages.id, messages.image_path, users.username, messages.theme
+            FROM messages
+            JOIN users ON messages.user_id = users.id
+            ORDER BY messages.id DESC
+        """).fetchall()
     db.close()
 
-    return render_template_string(INDEX_HTML, visits=visits, messages=messages, session=session)
+    return render_template_string(INDEX_HTML, visits=visits, messages=messages, posts=posts, session=session)
 
 @app.route("/new")
 def new():
@@ -235,12 +344,15 @@ def send():
 
     content = request.form["content"].strip()
     image = request.files.get("image")
+    theme = request.form.get("theme")
 
     if content == "":
         return redirect("/new")
 
     db = sqlite3.connect("database.db", check_same_thread=False)
-    db.execute("INSERT INTO messages (content, user_id) VALUES (?, ?)", [content, session["user_id"]])
+    db.execute("INSERT INTO messages (content, user_id, theme) VALUES (?, ?, ?)",
+                 [content, session["user_id"], theme]
+    )
 
     db.commit()
 
@@ -260,7 +372,9 @@ def delete(msg_id):
     if "username" not in session:
         return redirect("/login")
     db = sqlite3.connect("database.db", check_same_thread=False)
-    db.execute("DELETE FROM messages WHERE id = ?", [msg_id])
+    db.execute("DELETE FROM messages WHERE id = ? AND user_id = ?", 
+                (msg_id, session["user_id"])
+    )
     db.commit()
     db.close()
     return redirect("/")
@@ -275,17 +389,20 @@ def login():
 
     db = sqlite3.connect("database.db", check_same_thread=False)
     user = db.execute(
-        "SELECT id FROM users WHERE username=? AND password=?",
-        (username, password)
+        "SELECT id, password_hash FROM users WHERE username=?",
+        (username,)
     ).fetchone()
     db.close()
-
-    if user:
+    if user and check_password_hash(user[1], password):
         session["user_id"] = user[0]
         session["username"] = username
         return redirect("/")
     else:
         return "Väärä käyttäjänimi tai salasana"
+
+    
+
+
 
 @app.route("/register")
 def register():
@@ -294,6 +411,7 @@ def register():
 @app.route("/create_user", methods=["POST"])
 def create_user():
     username = request.form["username"]
+    blog_name = request.form["blog_name"]
     password = request.form["password"]
     password2 = request.form["password2"]
 
@@ -301,7 +419,8 @@ def create_user():
         return "Salasanat eivät täsmää. <a href='/register'>Yritä uudelleen</a>"
 
     db = sqlite3.connect("database.db", check_same_thread=False)
-    db.execute("INSERT INTO users (username, password) VALUES (?,?)", (username, password))
+    password_hash = generate_password_hash(password)
+    db.execute("INSERT INTO users (username, password_hash, blog_name) VALUES (?, ?, ?)", (username, password_hash, blog_name))
     db.commit()
     db.close()
 
@@ -326,6 +445,7 @@ def post_send():
     title = request.form["title"].strip()
     content = request.form["content"].strip()
     image = request.files.get("image")
+    theme = request.form.get("theme")
     image_path = None
 
     if image and image.filename != "":
@@ -334,8 +454,8 @@ def post_send():
         image.save(image_path)
 
     db = sqlite3.connect("database.db", check_same_thread=False)
-    db.execute("INSERT INTO posts (user_id, title, content, image_path) VALUES (?, ?, ?, ?)",
-               (session["user_id"], title, content, image_path))
+    db.execute("INSERT INTO posts (user_id, title, content, image_path, theme) VALUES (?, ?, ?, ?, ?)",
+               (session["user_id"], title, content, image_path, theme))
     db.commit()
     db.close()
 
@@ -347,7 +467,7 @@ def posts():
         return redirect("/login")
     db = sqlite3.connect("database.db", check_same_thread=False)
     posts = db.execute("""
-        SELECT posts.id, posts.title, posts.content, posts.image_path, users.username
+        SELECT posts.id, posts.title, posts.content, posts.image_path, posts.theme, users.username
         FROM posts
         JOIN users ON posts.user_id = users.id
         ORDER BY posts.created_at DESC
@@ -371,8 +491,7 @@ def post_delete(post_id):
 if __name__ == "__main__":
     db = sqlite3.connect("database.db", check_same_thread=False)
     db.execute("CREATE TABLE IF NOT EXISTS visits (id INTEGER PRIMARY KEY, visited_at TEXT)")
-    db.execute("CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY, content TEXT, image_path TEXT, user_id INTEGER)")
-    db.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT, password TEXT)")
+    db.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT UNIQUE, password_hash TEXT)")
     db.execute("""
     CREATE TABLE IF NOT EXISTS posts (
         id INTEGER PRIMARY KEY,
@@ -380,10 +499,41 @@ if __name__ == "__main__":
         title TEXT,
         content TEXT,
         image_path TEXT,
+        theme TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
     """)
+    db.execute("""
+    CREATE TABLE IF NOT EXISTS messages (
+        ID INTEGER PRIMARY KEY,
+        content TEXT,
+               image_path TEXT,
+               user_id INTEGER,
+               theme TEXT
+    )
+    """)
+    db = sqlite3.connect("database.db", check_same_thread=False)
+
+# Tarkistetaan ensin, onko blog_name-sarake jo olemassa
+    cursor = db.cursor()
+    cursor.execute("PRAGMA table_info(users)")
+    columns = [col[1] for col in cursor.fetchall()]
+
+    if "blog_name" not in columns:
+        cursor.execute("ALTER TABLE users ADD COLUMN blog_name TEXT")
+        db.commit()
+
+    
     db.close()
 
     app.run(debug=True)
+
+
+
+
+
+
+
+
+
 
