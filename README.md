@@ -11,16 +11,20 @@ Sivulla pystyt:
 - (Ehkä myös pystyt vaihtamaan koko sivun teemaa (pimeäksi tai valoisaksi) ja muuta hassua mitä en oo viel keksiny)
 
 
-#Avaus ohjeet.
+#Avausohjeet.
 
-- Lataa koodi Githubin "Code" linkistä.
-- Avaa komentorivi (Terminal)
-- Windows: cmd tai PowerShell
-- Mac/Linux: Terminal
-- Siirry kansioon, johon haluat tallentaa projektin
-- Lataa repo koneelle
-- Kirjoita: git clone https://github.com/kayttaja/repo.git
-- Tämä luo kansion nimeltä repo siihen hakemistoon, jossa olet.
-- Mene kansioon: cd repo
-- Avaa projekti VS Code:lla
-- Kansion ollessa oikeassa paikassa: code .
+# Opiskelijablogi
+
+
+# Kloonaa GitHub-repo
+
+1. git clone 
+https://github.com/miltsii/Opiskelijoiden-blogisivu.git
+2. cd Opiskelijoiden-blogisivu. 
+3. Luo virtuaaliympäristö:  python3 -m venv venv
+source venv/bin/activate
+4. Kirjoita: pip install Flask
+5. (Jos tarvitsee) Luo tietokanta: python -c "import sqlite3; conn = sqlite3.connect('database.db'); c = conn.cursor(); c.executescript(open('schema.sql').read()); conn.commit(); conn.close()"
+6. Kirjoita "flask run"
+7. http://127.0.0.1:5000
+
