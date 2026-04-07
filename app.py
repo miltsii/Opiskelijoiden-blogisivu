@@ -72,7 +72,7 @@ INDEX_HTML = """
 <div style="max-height: 300px; overflow-y: scroll; border:1px solid #aaa; padding:10px;">
 {% for post_id, title, content, image_path, theme, username in posts %}
     <div style="margin-bottom:15px;">
-        <strong>{{ username }}</strong> - <em>{{ title }}</em> ({{ theme }})<br>
+        <strong><a href="/user/{{ username }}">{{ username }}</a></strong> - <em>{{ title }}</em> ({{ theme }})<br>
         {{ content }}<br>
         {% if image_path %}
             <img src="{{ image_path }}" style="max-width:200px;">
@@ -94,7 +94,7 @@ INDEX_HTML = """
 <ul>
 {% for content, msg_id, image_path, username, theme in messages %}
     <li class="message">
-        <strong>{{ username }}:</strong> {{ content }}
+        <strong><a href="/user/{{ username }}">{{ username }}</a>:</strong> {{ content }}
         <span class="theme">({{ theme }})</span>
         {% if image_path %}
             <img src="{{ image_path }}" alt="Ladattu kuva">
@@ -555,6 +555,40 @@ def post_delete(post_id):
     db.commit()
     db.close()
     return redirect("/posts")
+
+@app.route("/user/<username>")
+def user_profile(username):
+    if "username" not in session:
+        return redirect("/login")
+    
+    db = sqlite3.connect("database.db", check_same_thread=False)
+
+    posts = db.execute("""
+        SELECT posts.id, posts.title, posts.content, posts.image_path, posts.theme, users.username
+        FROM posts
+        JOIN users ON posts.user_id = users.id
+        WHERE users.username = ?
+        ORDER BY posts.created_at DESC
+    """, (username,)).fetchall()
+
+    db.close()
+
+    return render_template_string("""
+    <h1>{{ username }} - blogipostaukset</h1>
+    
+    {% for post_id, title, content, image_path, theme, username in posts %}
+        <div style="border:1px solid #aaa; padding:10px; margin-bottom:10px;">
+            <strong>{{ username }}</strong> - <em>{{ title }}</em> ({{ theme }})<br>
+            {{ content }}<br>
+                                  
+            {% if image_path %}
+                <img src="/{{ image_path }}" style="max-width:300px;">
+            {% endif %}
+            
+        </div>
+    {% endfor %}
+    <a href="/">Takaisin</a>
+    """, posts=posts, username=username)
 
 if __name__ == "__main__":
     db = sqlite3.connect("database.db", check_same_thread=False)
