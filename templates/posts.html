@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Postaukset</title>
+    <style>
+        .post { border: 1px solid #aaa; padding: 10px; margin-bottom: 10px; }
+        img { max-width: 300px; max-height: 300px; display:block; margin-top:5px; }
+        .trash-btn { background: none; border: none; cursor: pointer; }
+        .trash-btn img { width: 16px; height: 16px; }
+    </style>
+</head>
+<body>
+<h1>Postaukset</h1>
+{% for post_id, title, content, image_path, theme, username in posts %}
+<div class="post">
+    <strong>{{ username }}</strong> - <em>{{ title }}</em> - <span>({{ theme }})</span><br>
+    {{ content }}<br>
+
+    <h4>Kommentit</h4>
+    {% for c_post_id, c_content, c_username in comments %}
+        {% if c_post_id == post_id %}
+            <div style="margin-left:20px;">
+                <strong>{{ c_username }}:</strong> {{ c_content }}
+            </div>
+        {% endif %}
+    {% endfor %}
+
+    <form method="post" action="/comment/{{ post_id }}">
+        <input name="content" placeholder="Kirjoita kommentti">
+        <button type="submit">Kommentoi</button>
+    </form>
+
+    <form action="/post_delete/{{ post_id }}" method="post" style="display:inline;">
+        <button class="trash-btn" type="submit">
+            <img src="/static/trashbin.png" alt="Poista">
+        </button>
+    </form>
+
+    {% if image_path %}
+        <img src="{{ image_path }}" alt="Kuva">
+    {% endif %}
+</div>
+{% endfor %}
+
+<a href="/post_new">Luo uusi postaus</a> | <a href="/">Keskustelualue</a>
+</body>
+</html>

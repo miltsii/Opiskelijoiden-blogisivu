@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ username }} - {{ blog_name }}</title>
+</head>
+<body>
+<h1>{{ username }} - {{ blog_name }}</h1>
+
+{% for post_id, title, content, image_path, theme, post_username in posts %}
+    <div style="border:1px solid #aaa; padding:10px; margin-bottom:20px;">
+        <strong>{{ post_username }}</strong> - <em>{{ title }}</em> ({{ theme }})<br>
+        {{ content }}<br>
+
+        {% if image_path %}
+            <img src="/{{ image_path }}" style="max-width:300px;">
+        {% endif %}
+
+        <h4>Kommentit</h4>
+        {% for c_post_id, c_content, c_username in comments %}
+            {% if c_post_id == post_id %}
+                <div style="margin-left:20px;">
+                    <strong>{{ c_username }}:</strong> {{ c_content }}
+                </div>
+            {% endif %}
+        {% endfor %}
+
+        <form method="post" action="/comment/{{ post_id }}" style="margin-top:10px;">
+            <input name="content" placeholder="Kirjoita kommentti" style="width:80%;">
+            <button type="submit">Kommentoi</button>
+        </form>
+    </div>
+{% endfor %}
+
+<a href="/">Takaisin</a>
+</body>
+</html>

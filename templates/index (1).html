@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Keskustelualue</title>
+    <style>
+    body {
+        background-image: url('/static/kukat.jpg');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        margin: 0;
+        padding: 20px 0;
+        font-family: Arial, sans-serif;
+        min-height: 100vh;
+    }
+    .container {
+        background-color: rgba(255, 255, 255, 0.9);
+        padding: 20px;
+        border-radius: 10px;
+        max-width: 900px;
+        width: 90%;
+        margin: 0 auto;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    .message { display: flex; align-items: center; font-size: 14px; }
+    .theme { font-size: 12px; color: gray; margin-left: 5px; }
+    .trash-btn { background: none; border: none; padding: 0 5px; cursor: pointer; }
+    .trash-btn img { width: 16px; height: 16px; }
+    img { max-width: 200px; max-height: 200px; margin-left: 10px; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+<h1 style="text-align: center;">TERVETULOA OPISKELIJABLOGIIN!</h1>
+
+<div style="display: flex; justify-content: space-between; align-items: center;">
+{% if session.username %}
+<p>Kirjautunut käyttäjä: {{ session.username }}</p>
+<a href="/logout">Kirjaudu ulos</a>
+{% endif %}
+</div>
+
+<p>Sivua ladattu: {{ visits }} kertaa</p>
+<form method="get" action="/">
+    <input name="search" placeholder="Etsi käyttäjä tai blogi">
+    <input type="submit" value="Hae">
+</form>
+
+<h2>Uusimmat</h2>
+<div style="max-height: 300px; overflow-y: scroll; border:1px solid #aaa; padding:10px;">
+{% for post_id, title, content, image_path, theme, username in posts %}
+    <div style="margin-bottom:15px;">
+        <strong><a href="/user/{{ username }}">{{ username }}</a></strong> - <em>{{ title }}</em> ({{ theme }})<br>
+        {{ content }}<br>
+        {% if image_path %}
+            <img src="{{ image_path }}" style="max-width:200px;">
+        {% endif %}
+    </div>
+{% endfor %}
+</div>
+
+<h3>Valitse aihe</h3>
+<a href="/">Kaikki</a> |
+<a href="/?theme=opiskelu">Opiskelu</a> |
+<a href="/?theme=vapaa-aika">Vapaa-aika</a> |
+<a href="/?theme=musiikki">Musiikki</a> |
+<a href="/?theme=urheilu">Urheilu</a> |
+<a href="/?theme=lukeminen">Lukeminen</a> |
+<a href="/?theme=pelit">Pelit</a>
+
+<h3>Keskustelualue</h3>
+<ul>
+{% for content, msg_id, image_path, username, theme in messages %}
+    <li class="message">
+        <strong><a href="/user/{{ username }}">{{ username }}</a>:</strong> {{ content }}
+        <span class="theme">({{ theme }})</span>
+        {% if image_path %}
+            <img src="{{ image_path }}" alt="Ladattu kuva">
+        {% endif %}
+        <form action="/delete/{{ msg_id }}" method="post" style="display:inline;">
+            <button class="trash-btn" type="submit">
+                <img src="/static/trashbin.png" alt="Poista">
+            </button>
+        </form>
+    </li>
+{% endfor %}
+</ul>
+
+<a href="/new">Lähetä uusi viesti</a> | <a href="/posts">Postaukset</a>
+
+</div>
+</body>
+</html>

@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Uusi viesti</title>
+    <title>Uusi postaus</title>
 </head>
 <body>
-<h1>Uusi viesti</h1>
+<h1>Luo uusi postaus</h1>
 
-<form action="/send" method="post" enctype="multipart/form-data">
-<textarea name="content" rows="4" cols="40" placeholder="Kirjoita viesti..."></textarea><br><br>
-Lisää kuva (valinnainen): <input type="file" name="image"><br><br>
+<form action="/post_send" method="post" enctype="multipart/form-data">
+Otsikko:<br><input name="title"><br><br>
+Teksti:<br>
+<textarea name="content" rows="4" cols="40"></textarea><br><br>
 Teema:<br>
 <select name="theme">
     <option value="opiskelu">Opiskelu</option>
@@ -19,10 +20,11 @@ Teema:<br>
     <option value="lukeminen">Lukeminen</option>
     <option value="pelit">Pelit</option>
 </select><br><br>
-<input type="submit" value="Lähetä">
+Kuva (valinnainen): <input type="file" name="image"><br><br>
+<input type="submit" value="Julkaise">
 </form>
 
 <br>
-<a href="/">Takaisin keskusteluun</a>
+<a href="/posts">Takaisin postauksiin</a>
 </body>
 </html>
