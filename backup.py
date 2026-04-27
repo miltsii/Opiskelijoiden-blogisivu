@@ -72,7 +72,7 @@ INDEX_HTML = """
 <div style="max-height: 300px; overflow-y: scroll; border:1px solid #aaa; padding:10px;">
 {% for post_id, title, content, image_path, theme, username in posts %}
     <div style="margin-bottom:15px;">
-        <strong>{{ username }}</strong> - <em>{{ title }}</em> ({{ theme }})<br>
+        <strong><a href="/user/{{ username }}">{{ username }}</a></strong> - <em>{{ title }}</em> ({{ theme }})<br>
         {{ content }}<br>
         {% if image_path %}
             <img src="{{ image_path }}" style="max-width:200px;">
@@ -94,7 +94,7 @@ INDEX_HTML = """
 <ul>
 {% for content, msg_id, image_path, username, theme in messages %}
     <li class="message">
-        <strong>{{ username }}:</strong> {{ content }}
+        <strong><a href="/user/{{ username }}">{{ username }}</a>:</strong> {{ content }}
         <span class="theme">({{ theme }})</span>
         {% if image_path %}
             <img src="{{ image_path }}" alt="Ladattu kuva">
@@ -323,6 +323,21 @@ POSTS_HTML = """
     <strong>{{ username }}</strong> - <em>{{ title }}</em> - <span>({{ theme }})</span><br>
     {{ content }}<br>
 
+    <h4>Kommentit</h4>
+
+    {% for c_post_id, c_content, c_username in comments %}
+        {% if c_post_id == post_id %}
+            <div style="margin-left:20px;">
+                <strong>{{ c_username }}:</strong> {{ c_content }}
+            </div>
+        {% endif %}
+    {% endfor %}
+
+    <form method="post" action="/comment/{{ post_id }}">
+        <input name="content" placeholder="Kirjoita kommentti">
+        <button type="submit">Kommentoi</button>
+    </form>
+
     <form action="/post_delete/{{ post_id }}" method="post" style="display:inline;">
         <button class="trash-btn" type="submit">
             <img src="/static/trashbin.png" alt="Poista">
@@ -540,8 +555,17 @@ def posts():
         JOIN users ON posts.user_id = users.id
         ORDER BY posts.created_at DESC
     """).fetchall()
+
+    comments = db.execute("""
+        SELECT comments.post_id, comments.content, users.username
+        FROM comments
+        JOIN users ON comments.user_id = users.id
+        ORDER BY comments.created_at
+    """).fetchall()
+
     db.close()
-    return render_template_string(POSTS_HTML, posts=posts)
+
+    return render_template_string(POSTS_HTML, posts=posts, comments=comments)
 
 @app.route("/post_delete/<int:post_id>", methods=["POST"])
 def post_delete(post_id):
@@ -555,6 +579,90 @@ def post_delete(post_id):
     db.commit()
     db.close()
     return redirect("/posts")
+
+@app.route("/comment/<int:post_id>", methods=["POST"])
+def comment(post_id):
+    if "username" not in session:
+        return redirect("/login")
+    
+    content = request.form["content"].strip()
+
+    if content == "":
+        return redirect("/posts")
+    
+    db = sqlite3.connect("database.db", check_same_thread=False)
+    db.execute("""
+        INSERT INTO comments (post_id, user_id, content)
+        VALUES (?, ?, ?)
+    """, (post_id, session["user_id"], content))
+
+    db.commit()
+    db.close()
+
+    return redirect("/posts")
+    
+
+
+@app.route("/user/<username>")
+def user_profile(username):
+    if "username" not in session:
+        return redirect("/login")
+    
+    db = sqlite3.connect("database.db", check_same_thread=False)
+
+    posts = db.execute("""
+        SELECT posts.id, posts.title, posts.content, posts.image_path, posts.theme, users.username
+        FROM posts
+        JOIN users ON posts.user_id = users.id
+        WHERE users.username = ?
+        ORDER BY posts.created_at DESC
+    """, (username,)).fetchall()
+
+    user = db.execute("SELECT blog_name FROM users WHERE username = ?", (username,)).fetchone()
+    blog_name = user[0] if user else ""
+
+    comments = db.execute("""
+        SELECT comments.post_id, comments.content, users.username
+        FROM comments
+        JOIN users ON comments.user_id = users.id
+        WHERE comments.post_id IN (
+            SELECT id FROM posts WHERE user_id = (SELECT id FROM users WHERE username = ?)
+        )
+        ORDER BY comments.created_at
+    """, (username,)).fetchall()
+
+
+    db.close()
+
+    return render_template_string("""
+    <h1>{{ username }} - {{ blog_name }}</h1>
+    
+    {% for post_id, title, content, image_path, theme, username in posts %}
+        <div style="border:1px solid #aaa; padding:10px; margin-bottom:20px;">
+            <strong>{{ username }}</strong> - <em>{{ title }}</em> ({{ theme }})<br>
+            {{ content }}<br>
+            
+            {% if image_path %}
+                <img src="/{{ image_path }}" style="max-width:300px;">
+            {% endif %}
+            
+            <h4>Kommentit</h4>
+            {% for c_post_id, c_content, c_username in comments %}
+                {% if c_post_id == post_id %}
+                    <div style="margin-left:20px;">
+                        <strong>{{ c_username }}:</strong> {{ c_content }}
+                    </div>
+                {% endif %}
+            {% endfor %}
+            <form method="post" action="/comment/{{ post_id }}" style="margin-top:10px;">
+                <input name="content" placeholder="Kirjoita kommentti" style="width:80%;">
+                <button type="submit">Kommentoi</button>
+            </form>
+        </div>
+    {% endfor %}
+    <a href="/">Takaisin</a>
+    """, posts=posts, comments=comments, username=username, blog_name=blog_name)
+   
 
 if __name__ == "__main__":
     db = sqlite3.connect("database.db", check_same_thread=False)
@@ -578,6 +686,15 @@ if __name__ == "__main__":
                image_path TEXT,
                user_id INTEGER,
                theme TEXT
+    )
+    """)
+    db.execute("""
+    CREATE TABLE IF NOT EXISTS comments (
+        id INTEGER PRIMARY KEY,
+        post_id INTEGER,
+        user_id INTEGER,
+        content TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
     """)
     db = sqlite3.connect("database.db", check_same_thread=False)
