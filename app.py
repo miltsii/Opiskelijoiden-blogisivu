@@ -1,6 +1,7 @@
 from flask import Flask, request, redirect, render_template, session
 from werkzeug.utils import secure_filename
 import os
+import re
 
 from database.users import get_user_by_username, create_user, get_blog_name, check_password
 from database.messages import get_messages, add_message, delete_message
@@ -99,6 +100,10 @@ def create_user_route():
 
     if password != password2:
         return "Salasanat eivät täsmää. <a href='/register'>Yritä uudelleen</a>"
+    if len(password) < 6:
+        return "Salasanan pitää olla vähintään 6 merkkiä pitkä. <a href='/register'>Yritä uudelleen</a>"
+    if not re.search(r"[a-zA-Z]", password) or not re.search(r"[0-9]", password):
+        return "Salasanassa on oltava vähintään yksi kirjain ja yksi numero. <a href='/register'>Yritä uudelleen</a>"
 
     create_user(username, blog_name, password)
     return redirect("/login")
