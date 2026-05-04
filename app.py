@@ -3,9 +3,8 @@ from werkzeug.utils import secure_filename
 import os
 import re
 import secrets
-
+from database.messages import get_messages, add_message, delete_message, get_replies
 from database.users import get_user_by_username, create_user, get_blog_name, check_password
-from database.messages import get_messages, add_message, delete_message
 from database.blogs import get_posts, get_all_posts, get_posts_by_user, add_post, delete_post
 from database.comments import get_comments, get_comments_by_user_posts, add_comment
 from database.categories import get_visit_count
@@ -40,9 +39,10 @@ def index():
     visits = get_visit_count()
     posts = get_posts(search=search)
     messages = get_messages(search=search, theme=theme)
+    replies = {msg[1]: get_replies(msg[1]) for msg in messages}
     own_post = get_posts_by_user(session["username"])
-    own_comments = get_posts_by_user(session["username"])
-    return render_template("index (1).html", visits=visits, messages=messages, posts=posts, session=session, own_post=own_post, own_comments=own_comments)
+    own_comments = get_comments_by_user_posts(session["username"])
+    return render_template("index (1).html", visits=visits, messages=messages, posts=posts, session=session, own_post=own_post, own_comments=own_comments, replies=replies)
 
 
 @app.route("/new")
@@ -81,6 +81,17 @@ def delete(msg_id):
     delete_message(msg_id, session["user_id"])
     return redirect("/")
 
+@app.route("/reply/<int:msg_id>", methods=["POST"])
+def reply(msg_id):
+    if "username" not in session:
+        return redirect("/login")
+    
+    content = request.form["content"].strip()
+    if content == "":
+        return redirect("/")
+    
+    add_message(content, session["user_id"], None, None, mother_id=msg_id)
+    return redirect("/")
 
 @app.route("/login", methods=["GET", "POST"])
 def login():

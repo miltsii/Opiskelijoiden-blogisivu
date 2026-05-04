@@ -30,11 +30,11 @@ def get_messages(search=None, theme=None):
     return rows
 
 
-def add_message(content, user_id, theme, image_path=None):
+def add_message(content, user_id, theme, image_path=None, mother_id=None):
     db = sqlite3.connect("database.db", check_same_thread=False)
     db.execute(
-        "INSERT INTO messages (content, user_id, theme, image_path) VALUES (?, ?, ?, ?)",
-        [content, user_id, theme, image_path]
+        "INSERT INTO messages (content, user_id, theme, image_path, mother_id) VALUES (?, ?, ?, ?, ?)",
+        [content, user_id, theme, image_path, mother_id]
     )
     db.commit()
     if image_path:
@@ -44,6 +44,18 @@ def add_message(content, user_id, theme, image_path=None):
         )
         db.commit()
     db.close()
+
+def get_replies(mother_id):
+    db = sqlite3.connect("database.db", check_same_thread=False)
+    rows = db.execute("""
+        SELECT messages.content, messages.id, messages.image_path, users.username, messages.theme
+        FROM messages
+        JOIN users ON messages.user_id = users.id
+        WHERE messages.mother_id = ?
+        ORDER BY messages.id ASC
+    """, (mother_id,)).fetchall()
+    db.close()
+    return rows
 
 
 def delete_message(msg_id, user_id):

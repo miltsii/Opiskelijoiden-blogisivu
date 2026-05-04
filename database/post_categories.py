@@ -22,7 +22,8 @@ def init_db():
             content TEXT,
             image_path TEXT,
             user_id INTEGER REFERENCES users(id),
-            theme TEXT
+            theme TEXT,
+            mother_id INTEGER REFERENCES messages(ID)
         )
     """)
     db.execute("""
