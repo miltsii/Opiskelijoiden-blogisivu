@@ -26,11 +26,13 @@
     {% endfor %}
 
     <form method="post" action="/comment/{{ post_id }}">
+    <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
         <input name="content" placeholder="Kirjoita kommentti">
         <button type="submit">Kommentoi</button>
     </form>
 
     <form action="/post_delete/{{ post_id }}" method="post" style="display:inline;">
+    <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
         <button class="trash-btn" type="submit">
             <img src="/static/trashbin.png" alt="Poista">
         </button>

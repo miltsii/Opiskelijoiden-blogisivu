@@ -25,6 +25,7 @@
         {% endfor %}
 
         <form method="post" action="/comment/{{ post_id }}" style="margin-top:10px;">
+        <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
             <input name="content" placeholder="Kirjoita kommentti" style="width:80%;">
             <button type="submit">Kommentoi</button>
         </form>

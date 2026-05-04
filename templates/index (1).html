@@ -79,6 +79,7 @@
             <img src="{{ image_path }}" alt="Ladattu kuva">
         {% endif %}
         <form action="/delete/{{ msg_id }}" method="post" style="display:inline;">
+        <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
             <button class="trash-btn" type="submit">
                 <img src="/static/trashbin.png" alt="Poista">
             </button>

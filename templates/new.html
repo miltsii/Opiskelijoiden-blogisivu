@@ -7,6 +7,7 @@
 <h1>Uusi viesti</h1>
 
 <form action="/send" method="post" enctype="multipart/form-data">
+<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
 <textarea name="content" rows="4" cols="40" placeholder="Kirjoita viesti..."></textarea><br><br>
 Lisää kuva (valinnainen): <input type="file" name="image"><br><br>
 Teema:<br>

@@ -7,6 +7,7 @@
 <h1>Luo uusi postaus</h1>
 
 <form action="/post_send" method="post" enctype="multipart/form-data">
+<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
 Otsikko:<br><input name="title"><br><br>
 Teksti:<br>
 <textarea name="content" rows="4" cols="40"></textarea><br><br>

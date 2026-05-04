@@ -2,6 +2,7 @@ from flask import Flask, request, redirect, render_template, session
 from werkzeug.utils import secure_filename
 import os
 import re
+import secrets
 
 from database.users import get_user_by_username, create_user, get_blog_name, check_password
 from database.messages import get_messages, add_message, delete_message
@@ -12,6 +13,17 @@ from database.post_categories import init_db
 
 app = Flask(__name__)
 app.secret_key = "salainen"
+
+@app.before_request
+def protection():
+    if "csrf_token" not in session:
+        session["csrf_token"] = secrets.token_hex(16)
+    if request.method == "POST":
+        token = request.form.get("csrf_token")
+        print("Lomakkeen token:", token) 
+        print("Session token:", session.get("csrf_token"))
+        if token != session["csrf_token"]:
+            return "CSRF-error"
 
 UPLOAD_FOLDER = "static/uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -111,7 +123,8 @@ def create_user_route():
 
 @app.route("/logout")
 def logout():
-    session.clear()
+    session.pop("user_id", None)
+    session.pop("username", None)
     return redirect("/login")
 
 
