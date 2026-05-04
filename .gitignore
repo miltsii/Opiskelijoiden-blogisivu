@@ -1,1 +1,6 @@
 database.db
+__pycache__/
+.vscode
+static/uploads/*
+!static/uploads/kukat.jpg
+!static/uploads/trashbin.png

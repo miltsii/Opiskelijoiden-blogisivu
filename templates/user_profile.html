@@ -5,6 +5,8 @@
 </head>
 <body>
 <h1>{{ username }} - {{ blog_name }}</h1>
+<p>Postauksia yhteensä: {{ posts|length }}</p>
+<p>Kommentteja yhteensä: {{ comments|length }}</p>
 
 {% for post_id, title, content, image_path, theme, post_username in posts %}
     <div style="border:1px solid #aaa; padding:10px; margin-bottom:20px;">

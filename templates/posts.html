@@ -3,6 +3,25 @@
 <head>
     <title>Postaukset</title>
     <style>
+        body {
+            background-image: url('/static/kukat.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            margin: 0;
+            padding: 20px 0;
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.97);
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 900px;
+            width: 90%;
+            margin: 0 auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
         .post { border: 1px solid #aaa; padding: 10px; margin-bottom: 10px; }
         img { max-width: 300px; max-height: 300px; display:block; margin-top:5px; }
         .trash-btn { background: none; border: none; cursor: pointer; }
@@ -10,6 +29,7 @@
     </style>
 </head>
 <body>
+<div class="container">
 <h1>Postaukset</h1>
 {% for post_id, title, content, image_path, theme, username in posts %}
 <div class="post">
@@ -45,5 +65,6 @@
 {% endfor %}
 
 <a href="/post_new">Luo uusi postaus</a> | <a href="/">Keskustelualue</a>
+</div>
 </body>
 </html>

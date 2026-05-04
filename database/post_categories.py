@@ -8,7 +8,7 @@ def init_db():
     db.execute("""
         CREATE TABLE IF NOT EXISTS posts (
             id INTEGER PRIMARY KEY,
-            user_id INTEGER,
+            user_id INTEGER REFERENCES users(id),
             title TEXT,
             content TEXT,
             image_path TEXT,
@@ -21,15 +21,15 @@ def init_db():
             ID INTEGER PRIMARY KEY,
             content TEXT,
             image_path TEXT,
-            user_id INTEGER,
+            user_id INTEGER REFERENCES users(id),
             theme TEXT
         )
     """)
     db.execute("""
         CREATE TABLE IF NOT EXISTS comments (
             id INTEGER PRIMARY KEY,
-            post_id INTEGER,
-            user_id INTEGER,
+            post_id INTEGER REFERENCES posts(id),
+            user_id INTEGER REFERENCES users(id),
             content TEXT,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )

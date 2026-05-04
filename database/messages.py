@@ -33,8 +33,8 @@ def get_messages(search=None, theme=None):
 def add_message(content, user_id, theme, image_path=None):
     db = sqlite3.connect("database.db", check_same_thread=False)
     db.execute(
-        "INSERT INTO messages (content, user_id, theme) VALUES (?, ?, ?)",
-        [content, user_id, theme]
+        "INSERT INTO messages (content, user_id, theme, image_path) VALUES (?, ?, ?, ?)",
+        [content, user_id, theme, image_path]
     )
     db.commit()
     if image_path:

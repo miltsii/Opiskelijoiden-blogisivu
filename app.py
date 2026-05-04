@@ -40,8 +40,9 @@ def index():
     visits = get_visit_count()
     posts = get_posts(search=search)
     messages = get_messages(search=search, theme=theme)
-
-    return render_template("index (1).html", visits=visits, messages=messages, posts=posts, session=session)
+    own_post = get_posts_by_user(session["username"])
+    own_comments = get_posts_by_user(session["username"])
+    return render_template("index (1).html", visits=visits, messages=messages, posts=posts, session=session, own_post=own_post, own_comments=own_comments)
 
 
 @app.route("/new")

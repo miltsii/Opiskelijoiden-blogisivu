@@ -37,6 +37,8 @@
 <div style="display: flex; justify-content: space-between; align-items: center;">
 {% if session.username %}
 <p>Kirjautunut käyttäjä: {{ session.username }}</p>
+<p>Omat poastaukset: {{ own_post|length }}</p>
+<p>Omat kommentit: {{ own_comments|length }}</p>
 <a href="/logout">Kirjaudu ulos</a>
 {% endif %}
 </div>
